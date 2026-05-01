@@ -5,6 +5,8 @@
 | Tool | Scope | Description |
 |---|---|---|
 | `get_game_state(format?)` | General | Get current game state (`markdown` or `json`) |
+| `auto_slay_start_loop(seed?)` | Automation | Start the fair background auto-play loop with per-run logging |
+| `auto_slay_stop()` | Automation | Stop the fair background auto-play loop |
 | `use_potion(slot, target?)` | General | Use a potion (works in and out of combat) |
 | `discard_potion(slot)` | General | Discard a potion to free up the slot |
 | `proceed_to_map()` | General | Proceed from rewards/rest site/shop/treasure to the map |

@@ -25,6 +25,21 @@ public static partial class McpMod
             sb.AppendLine();
         }
 
+        if (state.TryGetValue("auto_slay", out var autoSlayObj) && autoSlayObj is Dictionary<string, object?> autoSlay)
+        {
+            sb.AppendLine("## AutoSlay");
+            sb.AppendLine($"**Active:** {autoSlay.GetValueOrDefault("is_active") ?? false} | Iteration: {autoSlay.GetValueOrDefault("iteration") ?? 0}");
+            if (autoSlay.GetValueOrDefault("current_seed") is string seed && !string.IsNullOrWhiteSpace(seed))
+                sb.AppendLine($"**Current seed:** {seed}");
+            if (autoSlay.GetValueOrDefault("current_log_file") is string logFile && !string.IsNullOrWhiteSpace(logFile))
+                sb.AppendLine($"**Current log:** {logFile}");
+            if (autoSlay.GetValueOrDefault("knowledge_root") is string knowledgeRoot && !string.IsNullOrWhiteSpace(knowledgeRoot))
+                sb.AppendLine($"**Knowledge root:** {knowledgeRoot}");
+            if (autoSlay.GetValueOrDefault("last_error") is string lastError && !string.IsNullOrWhiteSpace(lastError))
+                sb.AppendLine($"**Last error:** {lastError}");
+            sb.AppendLine();
+        }
+
         if (state.TryGetValue("message", out var msg) && msg != null)
         {
             sb.AppendLine(msg.ToString());

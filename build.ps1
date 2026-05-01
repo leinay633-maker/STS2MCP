@@ -8,14 +8,15 @@
 
 .PARAMETER GameDir
     Path to the Slay the Spire 2 installation directory.
-    Falls back to the STS2_GAME_DIR environment variable if not specified.
+    Falls back to the STS2_GAME_DIR environment variable and then probes
+    common Steam library locations if not specified.
 
 .PARAMETER Configuration
     Build configuration (default: Release).
 
 .EXAMPLE
-    .\build.ps1 -GameDir "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
-    .\build.ps1  # uses $env:STS2_GAME_DIR
+    .\build.ps1 -GameDir "D:\steam\steamapps\common\Slay the Spire 2"
+    .\build.ps1  # uses $env:STS2_GAME_DIR or probes common install locations
 #>
 param(
     [string]$GameDir,
@@ -25,34 +26,83 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# --- Resolve game directory ---
-if (-not $GameDir) {
-    $GameDir = $env:STS2_GAME_DIR
-}
-if (-not $GameDir) {
-    Write-Host @"
-ERROR: Game directory not specified.
+function Get-GameDirCandidates {
+    param([string]$PreferredGameDir)
 
-Provide it via parameter or environment variable:
-  .\build.ps1 -GameDir "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    foreach ($candidate in @(
+        $PreferredGameDir,
+        $env:STS2_GAME_DIR,
+        "D:\steam\steamapps\common\Slay the Spire 2",
+        "D:\SteamLibrary\steamapps\common\Slay the Spire 2",
+        "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2",
+        "C:\Program Files\Steam\steamapps\common\Slay the Spire 2"
+    )) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and -not $candidates.Contains($candidate)) {
+            $candidates.Add($candidate)
+        }
+    }
+
+    return $candidates
+}
+
+function Resolve-GameDir {
+    param([string]$PreferredGameDir)
+
+    foreach ($candidate in Get-GameDirCandidates -PreferredGameDir $PreferredGameDir) {
+        $dllPath = Join-Path $candidate "data_sts2_windows_x86_64\sts2.dll"
+        if (Test-Path $dllPath) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+function Resolve-DotNetExe {
+    $command = Get-Command dotnet -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+
+    $homeDir = [Environment]::GetFolderPath("UserProfile")
+    foreach ($candidate in @(
+        $(if ($env:DOTNET_ROOT) { Join-Path $env:DOTNET_ROOT "dotnet.exe" }),
+        $(if ($homeDir) { Join-Path $homeDir ".dotnet\dotnet.exe" })
+    )) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+# --- Resolve game directory ---
+$requestedGameDir = $GameDir
+$GameDir = Resolve-GameDir -PreferredGameDir $requestedGameDir
+if (-not $GameDir) {
+    $searched = (Get-GameDirCandidates -PreferredGameDir $requestedGameDir) -join "`n  "
+    Write-Host @"
+ERROR: Could not resolve the Slay the Spire 2 installation directory.
+
+Pass it explicitly:
+  .\build.ps1 -GameDir "D:\steam\steamapps\common\Slay the Spire 2"
 
 Or set it once in your PowerShell profile:
-  `$env:STS2_GAME_DIR = "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
+  `$env:STS2_GAME_DIR = "D:\steam\steamapps\common\Slay the Spire 2"
+
+Searched:
+  $searched
 "@ -ForegroundColor Red
     exit 1
 }
 
-$dllDir = Join-Path $GameDir "data_sts2_windows_x86_64"
-if (-not (Test-Path (Join-Path $dllDir "sts2.dll"))) {
-    Write-Host "ERROR: Could not find sts2.dll in '$dllDir'." -ForegroundColor Red
-    Write-Host "Make sure -GameDir points to the Slay the Spire 2 installation root." -ForegroundColor Red
-    exit 1
-}
-
 # --- Check prerequisites ---
-if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+$dotnetExe = Resolve-DotNetExe
+if (-not $dotnetExe) {
     Write-Host @"
-ERROR: 'dotnet' not found.
+ERROR: 'dotnet' not found on PATH or in the standard user install locations.
 
 Install the .NET 9 SDK from:
   https://dotnet.microsoft.com/download/dotnet/9.0
@@ -68,9 +118,10 @@ $outDir = Join-Path (Join-Path $scriptDir "out") "STS2_MCP"
 Write-Host "=== Building STS2_MCP ($Configuration) ===" -ForegroundColor Cyan
 Write-Host "Game directory : $GameDir"
 Write-Host "Output         : $outDir"
+Write-Host "dotnet         : $dotnetExe"
 Write-Host ""
 
-dotnet build $project -c $Configuration -o $outDir -p:STS2GameDir="$GameDir"
+& $dotnetExe build $project -c $Configuration -o $outDir -p:STS2GameDir="$GameDir"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""

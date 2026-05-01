@@ -21,6 +21,7 @@ Every JSON response includes:
 - `state_type` — which screen the game is on (see below)
 - `run` — `{ act, floor, ascension }` (absent for `menu`)
 - `player` — full player state: character, HP, gold, relics, potions, and during combat: energy, hand, piles, orbs (absent for `menu`)
+- `auto_slay` — background AutoSlay loop status, current seed/log file, and the knowledge directory used for iterative runs
 
 | `state_type` | Screen | Available Actions |
 |---|---|---|
@@ -47,6 +48,13 @@ Every JSON response includes:
 ## POST — Actions
 
 All POST requests use JSON body with `"action"` field. All responses include `{ "status": "ok" | "error", "message": "..." }`.
+
+### Automation
+
+| Action | Parameters | When to Use |
+|---|---|---|
+| `auto_slay_start_loop` | `seed`?: string | Start the fair background auto-play loop. Runs continue automatically after game over and logs/summaries are written to the learning directory. |
+| `auto_slay_stop` | _(none)_ | Stop the fair background auto-play loop. |
 
 ### Combat
 

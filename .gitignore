@@ -1,6 +1,7 @@
 bin/
 obj/
 out/
+STS2_MCP.learning/
 
 # Python
 __pycache__/
@@ -13,6 +14,7 @@ mcp/.venv/
 .mcp.json
 CLAUDE.md
 GUIDE.md
+knowledge/
 
 # Qoder
 .qoder.json

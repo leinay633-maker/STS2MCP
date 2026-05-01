@@ -40,6 +40,15 @@ public static partial class McpMod
 {
     private static Dictionary<string, object?> ExecuteAction(string action, Dictionary<string, JsonElement> data)
     {
+        if (action == "auto_slay_start_loop")
+            return ExecuteAutoSlayStartLoop(data);
+        if (action == "auto_slay_stop")
+            return ExecuteAutoSlayStop();
+        if (action == "return_to_main_menu")
+            return ExecuteReturnToMainMenu();
+        if (action == "start_singleplayer_run")
+            return ExecuteStartSingleplayerRun(data);
+
         if (!RunManager.Instance.IsInProgress)
             return Error("No run in progress");
 

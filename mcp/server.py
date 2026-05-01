@@ -84,6 +84,34 @@ async def get_game_state(format: str = "markdown") -> str:
 
 
 @mcp.tool()
+async def auto_slay_start_loop(seed: str | None = None) -> str:
+    """[Automation] Start the fair background auto-play loop.
+
+    This starts the mod's fair-play automation in a background loop. When a run
+    ends, the mod records a summary/log and automatically starts the next run.
+
+    Args:
+        seed: Optional seed for the first run. Later runs randomize automatically.
+    """
+    body: dict = {"action": "auto_slay_start_loop"}
+    if seed is not None:
+        body["seed"] = seed
+    try:
+        return await _post(body)
+    except Exception as e:
+        return _handle_error(e)
+
+
+@mcp.tool()
+async def auto_slay_stop() -> str:
+    """[Automation] Stop the background auto-play loop."""
+    try:
+        return await _post({"action": "auto_slay_stop"})
+    except Exception as e:
+        return _handle_error(e)
+
+
+@mcp.tool()
 async def use_potion(slot: int, target: str | None = None) -> str:
     """Use a potion from the player's potion slots.
 

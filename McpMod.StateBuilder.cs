@@ -45,6 +45,7 @@ public static partial class McpMod
     private static Dictionary<string, object?> BuildGameState()
     {
         var result = new Dictionary<string, object?>();
+        result["auto_slay"] = BuildAutoSlayState();
 
         if (!RunManager.Instance.IsInProgress)
         {
@@ -179,14 +180,6 @@ public static partial class McpMod
             }
             else
             {
-                // Auto-open the shopkeeper's inventory if not already open.
-                // NMerchantRoom.Inventory (UI node) can be null before the scene is fully ready;
-                // OpenInventory() itself accesses Inventory.IsOpen, so guard against null.
-                var merchUI = NMerchantRoom.Instance;
-                if (merchUI?.Inventory != null && !merchUI.Inventory.IsOpen)
-                {
-                    merchUI.OpenInventory();
-                }
                 result["state_type"] = "shop";
                 result["shop"] = BuildShopState(merchantRoom, runState);
             }
@@ -360,6 +353,12 @@ public static partial class McpMod
             }
         }
 
+        var masterDeck = new List<Dictionary<string, object?>>();
+        foreach (var card in player.Deck.Cards)
+            masterDeck.Add(BuildCardInfo(card));
+        state["deck"] = masterDeck;
+        state["deck_count"] = masterDeck.Count;
+
         state["gold"] = player.Gold;
 
         // Powers (status effects)
@@ -401,6 +400,8 @@ public static partial class McpMod
             slotIndex++;
         }
         state["potions"] = potions;
+        state["potion_slot_count"] = player.PotionSlots.Count;
+        state["potion_count"] = potions.Count;
 
         return state;
     }
@@ -608,20 +609,6 @@ public static partial class McpMod
             };
             state["message"] = "The fake merchant has been defeated. Proceed to map.";
             return state;
-        }
-
-        // Auto-open the inventory if the merchant button is still available
-        if (fakeMerchantNode != null)
-        {
-            var inventoryUI = FindFirst<NMerchantInventory>(fakeMerchantNode);
-            if (inventoryUI != null && !inventoryUI.IsOpen)
-            {
-                // ForceClick the merchant button to go through the proper signal chain
-                // (disables proceed button, wires InventoryClosed callback, etc.)
-                var merchantButton = fakeMerchantNode.MerchantButton;
-                if (merchantButton != null && merchantButton.Visible && merchantButton.IsEnabled)
-                    merchantButton.ForceClick();
-            }
         }
 
         // Build shop inventory from the FakeMerchant model

@@ -14,6 +14,25 @@ Singleplayer and multiplayer (co-op) supported. Tested against STS2 `v0.103.2`.
 > [!caution]
 > Multiplayer support is in **beta** — expect bugs. Any multiplayer issues encountered with this mod installed are very likely caused by the mod, not the game. Please disable the mod and verify the issue persists before reporting bugs to the STS2 developers.
 
+## AutoSlay Loop
+
+The mod can also run a background fair-play automation loop. This is meant for hands-off iteration: the mod starts normal runs, takes one legal action at a time, records per-run logs/summaries, and starts the next run automatically after a death or run end.
+
+- REST action: `{"action":"auto_slay_start_loop","seed":"optional-first-seed"}`
+- REST action: `{"action":"auto_slay_stop"}`
+- MCP tools: `auto_slay_start_loop(seed?)`, `auto_slay_stop()`
+
+Knowledge and logs accumulate next to the installed mod DLL under:
+
+```text
+<mods>/STS2_MCP.learning/
+  run-logs/
+  run-summaries.jsonl
+  aggregate.json
+```
+
+`run-summaries.jsonl` stores one summary per run. `aggregate.json` stores simple rollups such as total runs, error count, and best floor reached.
+
 ## For Players
 
 ### 1. Install the Mod
